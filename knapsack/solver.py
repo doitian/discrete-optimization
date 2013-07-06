@@ -30,6 +30,20 @@ def dynamicProgramming(items, values, weights, capacity):
 
     return objectiveMatrix[items][capacity], taken
 
+def greedyValuePerWeight(items, values, weights, capacity):
+    # sort by value/weight
+    sortedIndexes = sorted(range(0, items), key=lambda i: - float(values[i]) / weights[i])
+    taken = [0] * items
+    value = 0
+    weight = 0
+    for i in sortedIndexes:
+        if weight + weights[i] <= capacity:
+            value += values[i]
+            weight += weights[i]
+            taken[i] = 1
+
+    return value, taken
+
 def solveIt(inputData):
     # Modify this code to run your optimization algorithm
 
@@ -50,8 +64,13 @@ def solveIt(inputData):
         values.append(int(parts[0]))
         weights.append(int(parts[1]))
 
-    opt = 1
-    value, taken = dynamicProgramming(items, values, weights, capacity)
+    if capacity > items and capacity >= 100000:
+        # Large input size, use greedy
+        opt = 0
+        value, taken = greedyValuePerWeight(items, values, weights, capacity)
+    else:
+        opt = 1
+        value, taken = dynamicProgramming(items, values, weights, capacity)
 
     # prepare the solution in the specified output format
     outputData = str(value) + ' ' + str(opt) + '\n'
