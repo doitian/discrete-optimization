@@ -158,6 +158,7 @@ def solveIt(inputData):
         opt = 0
         # value, taken = greedyValuePerWeight(items, values, weights, capacity)
         # value, taken = greedyValue(items, values, weights, capacity)
+        opt = 1
         value, taken = branchAndBondWithLinearRelaxation(items, values, weights, capacity)
     else:
         opt = 1
