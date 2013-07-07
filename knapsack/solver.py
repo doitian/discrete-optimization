@@ -44,6 +44,95 @@ def greedyValuePerWeight(items, values, weights, capacity):
 
     return value, taken
 
+def greedyValue(items, values, weights, capacity):
+    # sort by value/weight
+    sortedIndexes = sorted(range(0, items), key=lambda i: - values[i])
+    taken = [0] * items
+    value = 0
+    weight = 0
+    for i in sortedIndexes:
+        if weight + weights[i] <= capacity:
+            value += values[i]
+            weight += weights[i]
+            taken[i] = 1
+
+    return value, taken
+
+def sortedBranchAndBondWithLinearRelaxation(items, values, weights, capacity):
+    bestValue, bestTaken = greedyValuePerWeight(items, values, weights, capacity)
+    if bestValue == 0 or not (0 in bestTaken):
+        return bestValue, bestTaken
+
+    taken = [0] * items
+    takenValue = 0
+    takenWeight = 0
+    estimation = 0
+    i = 0
+
+    while i >= 0:
+        memo = (i, takenValue, takenWeight)
+        while i < items and takenWeight < capacity:
+            taken[i] = 1
+            takenValue += values[i]
+            takenWeight += weights[i]
+            i += 1
+
+        estimation = takenValue
+        if takenWeight > capacity:
+            estimation -= (takenWeight - capacity) * (float(values[i - 1]) / weights[i - 1])
+
+        # collect solution
+        if i == items:
+            value = takenValue
+            if takenWeight > capacity:
+                value = takenValue - values[-1]
+                taken[-1] = 0
+
+            if value > bestValue:
+                bestValue = value
+                bestTaken = taken[:]
+
+            takenValue -= values[-1]
+            takenWeight -= weights[-1]
+            i = items - 1
+
+        # print '---------'
+        # print i, taken[0:i], takenValue, takenWeight, estimation, bestValue, memo
+
+        if estimation <= bestValue:
+            # prune the branch
+            i, takenValue, takenWeight = memo
+
+        i -= 1
+        while i >= 0 and taken[i] == 0:
+            i -= 1
+
+        if i >= 0:
+            takenValue -= values[i]
+            takenWeight -= weights[i]
+            taken[i] = 0
+            i += 1
+
+        # print i, taken[0:i], takenValue, takenWeight
+
+    return bestValue, bestTaken
+
+# Sort by value and use depth first search.
+#
+# Use greedy as a base solution.
+def branchAndBondWithLinearRelaxation(items, values, weights, capacity):
+    sortedIndexes = sorted(range(0, items), key=lambda i: - float(values[i]) / weights[i])
+    values = [values[i] for i in sortedIndexes]
+    weights = [weights[i] for i in sortedIndexes]
+
+    value, sortedTaken = sortedBranchAndBondWithLinearRelaxation(items, values, weights, capacity)
+
+    taken = [0] * items
+    for i in range(0, items):
+        taken[sortedIndexes[i]] = sortedTaken[i]
+
+    return value, taken
+
 def solveIt(inputData):
     # Modify this code to run your optimization algorithm
 
@@ -64,10 +153,12 @@ def solveIt(inputData):
         values.append(int(parts[0]))
         weights.append(int(parts[1]))
 
-    if capacity > items and capacity >= 100000:
+    if True: # capacity > items and capacity >= 100000:
         # Large input size, use greedy
         opt = 0
-        value, taken = greedyValuePerWeight(items, values, weights, capacity)
+        # value, taken = greedyValuePerWeight(items, values, weights, capacity)
+        # value, taken = greedyValue(items, values, weights, capacity)
+        value, taken = branchAndBondWithLinearRelaxation(items, values, weights, capacity)
     else:
         opt = 1
         value, taken = dynamicProgramming(items, values, weights, capacity)
